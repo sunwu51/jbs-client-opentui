@@ -43,7 +43,7 @@ jobs:
 
             (
               cd "$dir/bin"
-              zip -r "../../../release-assets/${name}.zip" .
+              zip -r "../../../../release-assets/${name}.zip" .
             )
           done < <(find dist/npm -mindepth 1 -maxdepth 1 -type d | sort)
 
