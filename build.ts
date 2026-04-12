@@ -9,6 +9,10 @@ const npmOutdir = join(outdir, "npm");
 const rootPackageName = "jbs-client";
 const templateDir = "scripts/npm";
 const projectRoot = resolve(".");
+const repository = {
+  type: "git",
+  url: "git+https://github.com/sunwu51/jbs-client-opentui.git"
+};
 
 const targets = [
   { target: "bun-windows-x64", os: "win32", cpu: "x64" },
@@ -45,6 +49,7 @@ function createRootPackageJson() {
     version: packageJson.version,
     description: "JBS Client terminal UI powered by OpenTUI",
     license: "UNLICENSED",
+    repository,
     bin: {
       [rootPackageName]: "./bin/jbs-client"
     },
@@ -61,6 +66,7 @@ function createPlatformPackageJson(name: string, os: string, cpu: string, bin: s
     version: packageJson.version,
     description: "Prebuilt binary for JBS Client OpenTUI",
     license: "UNLICENSED",
+    repository,
     os: [os],
     cpu: [cpu],
     preferUnplugged: true,
