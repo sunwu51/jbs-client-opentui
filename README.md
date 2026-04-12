@@ -1,26 +1,74 @@
 # jbs-client
 
-OpenTUI client application with npm-ready multi-platform binary packaging.
+`jbs-client` is the CLI client for [JVMByteSwapTool](https://github.com/sunwu51/JVMByteSwapTool).
 
-## Build publishable packages
+It is built with OpenTUI and connects to the JVMByteSwapTool WebSocket service by default.
+
+## Install
 
 ```bash
-bun run build:npm
+npm i -g jbs-client
 ```
 
-This generates:
+## Run
 
-- `dist/npm/jbs-client` - root wrapper npm package
-- `dist/npm/jbs-client-windows-x64`
-- `dist/npm/jbs-client-windows-arm64`
-- `dist/npm/jbs-client-linux-x64`
-- `dist/npm/jbs-client-linux-arm64`
-- `dist/npm/jbs-client-darwin-x64`
-- `dist/npm/jbs-client-darwin-arm64`
+```bash
+jbs-client
+```
 
-## Publish order
+By default, the client connects to:
 
-1. Publish each platform package from `dist/npm/jbs-client-<platform>-<arch>`
-2. Publish the root wrapper package from `dist/npm/jbs-client`
+```text
+ws://localhost:18000
+```
 
-The root wrapper package resolves the current platform and launches the matching prebuilt binary.
+## Options
+
+```bash
+jbs-client --host localhost --ws_port 18000 --connect true
+```
+
+Supported startup parameters:
+
+- `--host <host>`: WebSocket host, default is `localhost`
+- `--ws_port <port>`: WebSocket port, default is `18000`
+- `--connect <true|false>`: whether to connect to the backend on startup, default is `true`
+
+Examples:
+
+```bash
+jbs-client --host 192.168.1.10 --ws_port 18000
+```
+
+```bash
+jbs-client --connect false
+```
+
+When `--connect false` is used, the UI starts without opening the backend WebSocket connection. You can edit the WebSocket URL inside the TUI and reconnect manually.
+
+## Keyboard
+
+- `Ctrl+C`: exit the client
+- `Tab` / `Shift+Tab`: switch focus
+- `Up` / `Down`: change selected action in the menu
+- `Enter`: open an action or submit the current form
+- `Esc`: return from the form view to the main menu
+
+## Release Build
+
+This repository publishes prebuilt binaries through GitHub Releases and npm wrapper packages.
+
+Pushing a tag like `v0.0.1` triggers the release workflow, builds all supported platforms, zips each platform binary, and uploads them to the corresponding GitHub Release.
+
+To publish npm packages from the correct `dist/npm/*` directories, use:
+
+```bash
+bun run build
+bun run publish:npm
+```
+
+The publish script always targets the official npm registry:
+
+```text
+https://registry.npmjs.org/
+```

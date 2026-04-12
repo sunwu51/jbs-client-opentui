@@ -1,14 +1,14 @@
 {
   "name": "jbs-client",
-  "version": "0.0.1",
-  "private": true,
+  "version": "0.0.2",
   "type": "module",
   "scripts": {
     "start": "bun run src/index.tsx",
     "dev": "bun --watch run src/index.tsx",
     "test": "bun test",
     "build": "bun run build.ts",
-    "build:npm": "bun run build.ts"
+    "build:npm": "bun run build.ts",
+    "publish:npm": "bun run publish.ts"
   },
   "dependencies": {
     "@opentui/core": "0.1.97",
