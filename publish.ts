@@ -26,7 +26,7 @@ async function assertPublishDir(name: string) {
 async function publishPackage(name: string) {
   await assertPublishDir(name);
   console.log(`Publishing ${name}...`);
-  await $`npm publish --access public --registry https://registry.npmjs.org/`.cwd(join(distRoot, name));
+  await $`npm publish --access public --provenance --registry https://registry.npmjs.org/`.cwd(join(distRoot, name));
 }
 
 async function main() {

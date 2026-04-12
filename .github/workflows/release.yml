@@ -7,10 +7,12 @@ on:
 
 permissions:
   contents: write
+  id-token: write
 
 jobs:
   release:
     runs-on: ubuntu-latest
+    environment: release
 
     steps:
       - name: Checkout
@@ -53,19 +55,5 @@ jobs:
           files: release-assets/*.zip
           generate_release_notes: true
 
-      - name: Setup npm auth
-        if: ${{ secrets.NPM_TOKEN != '' }}
-        shell: bash
-        run: |
-          cat > ~/.npmrc <<EOF
-          //registry.npmjs.org/:_authToken=${NPM_TOKEN}
-          registry=https://registry.npmjs.org/
-          EOF
-        env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-
       - name: Publish npm Packages
-        if: ${{ secrets.NPM_TOKEN != '' }}
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: bun run publish:npm

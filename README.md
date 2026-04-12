@@ -72,3 +72,5 @@ The publish script always targets the official npm registry:
 ```text
 https://registry.npmjs.org/
 ```
+
+For GitHub Actions publishing, this repository is intended to use npm Trusted Publisher with the `release` environment instead of an npm access token.
