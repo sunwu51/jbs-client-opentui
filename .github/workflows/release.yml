@@ -1,0 +1,54 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install Dependencies
+        run: bun install
+
+      - name: Build Packages
+        run: bun run build
+
+      - name: Prepare Release Assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p release-assets
+
+          while IFS= read -r dir; do
+            name="$(basename "$dir")"
+            if [ "$name" = "jbs-client" ]; then
+              continue
+            fi
+
+            (
+              cd "$dir/bin"
+              zip -r "../../../release-assets/${name}.zip" .
+            )
+          done < <(find dist/npm -mindepth 1 -maxdepth 1 -type d | sort)
+
+          ls -lah release-assets
+
+      - name: Upload Release Assets
+        uses: softprops/action-gh-release@v2
+        with:
+          files: release-assets/*.zip
+          generate_release_notes: true
