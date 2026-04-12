@@ -50,9 +50,7 @@ function createRootPackageJson() {
     description: "JBS Client terminal UI powered by OpenTUI",
     license: "UNLICENSED",
     repository,
-    bin: {
-      [rootPackageName]: "./bin/jbs-client"
-    },
+    bin: "./bin/jbs-client.js",
     scripts: {
       postinstall: "node ./postinstall.mjs"
     },
@@ -102,7 +100,7 @@ async function installCrossPlatformNativeDependencies() {
 async function copyTemplates() {
   const rootPublishDir = join(npmOutdir, rootPackageName);
   await mkdir(join(rootPublishDir, "bin"), { recursive: true });
-  await cp(join(templateDir, "bin", "jbs-client"), join(rootPublishDir, "bin", "jbs-client"));
+  await cp(join(templateDir, "bin", "jbs-client.js"), join(rootPublishDir, "bin", "jbs-client.js"));
   await cp(join(templateDir, "postinstall.mjs"), join(rootPublishDir, "postinstall.mjs"));
   await cp(join(templateDir, "README.md"), join(rootPublishDir, "README.md"));
   await writeFile(join(rootPublishDir, "package.json"), `${JSON.stringify(createRootPackageJson(), null, 2)}\n`);

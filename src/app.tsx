@@ -26,6 +26,8 @@ export function App({ host, wsPort, connectBackend }: AppProps) {
   const [reconnectVersion, setReconnectVersion] = useState(0)
   const [menuFocusTarget, setMenuFocusTarget] = useState<MenuFocusTarget>("content")
   const [toastMessage, setToastMessage] = useState<string | null>(null)
+  const wsInputFocused = state.screen === "menu" && menuFocusTarget === "ws-input"
+  const reconnectFocused = state.screen === "menu" && menuFocusTarget === "reconnect"
 
   const connection = useMemo(() => {
     return connectWebSocket({
@@ -181,12 +183,18 @@ export function App({ host, wsPort, connectBackend }: AppProps) {
       ) : null}
       <box border borderColor="#2563eb" height={3} minHeight={3} maxHeight={3} paddingX={1} paddingY={0} flexDirection="row" alignItems="center" justifyContent="flex-start" gap={1}>
         <text fg="#93c5fd">WS</text>
-        <box flexGrow={1}>
-          <input value={wsUrl} onChange={setWsUrl} width="100%" focused={state.screen === "menu" && menuFocusTarget === "ws-input"} />
+        <box
+          flexGrow={1}
+          backgroundColor={wsInputFocused ? "#2563eb" : undefined}
+          border={wsInputFocused}
+          borderColor={wsInputFocused ? "#bfdbfe" : undefined}
+        >
+          <input value={wsUrl} onChange={setWsUrl} width="100%" focused={wsInputFocused} />
         </box>
         <box
           border
-          borderColor={state.screen === "menu" && menuFocusTarget === "reconnect" ? "#3b82f6" : "#22c55e"}
+          borderColor={reconnectFocused ? "#bfdbfe" : "#22c55e"}
+          backgroundColor={reconnectFocused ? "#2563eb" : undefined}
           paddingX={1}
           paddingY={0}
           flexGrow={0}
@@ -199,7 +207,7 @@ export function App({ host, wsPort, connectBackend }: AppProps) {
             reconnect()
           }}
         >
-          <text fg={state.screen === "menu" && menuFocusTarget === "reconnect" ? "#93c5fd" : "#22c55e"}>Reconnect</text>
+          <text fg={reconnectFocused ? "#eff6ff" : "#22c55e"}>Reconnect</text>
         </box>
         <box flexGrow={0} flexShrink={0} width={12}>
           <text fg={state.connectionStatus === "connected" ? "#22c55e" : state.connectionStatus === "error" ? "#f87171" : "#facc15"}>
