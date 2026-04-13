@@ -1,6 +1,6 @@
 {
   "name": "jbs-client",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "type": "module",
   "scripts": {
     "start": "bun run src/index.tsx",
@@ -8,6 +8,7 @@
     "test": "bun test",
     "build": "bun run build.ts",
     "build:npm": "bun run build.ts",
+    "verify:npm": "bun run scripts/verify-npm-package.ts",
     "publish:npm": "bun run publish.ts"
   },
   "dependencies": {

@@ -8,12 +8,19 @@ function readArg(name: string, fallback: string): string {
   return index >= 0 && index + 1 < args.length ? args[index + 1] : fallback
 }
 
-const host = readArg("--host", "localhost")
-const wsPort = Number.parseInt(readArg("--ws_port", "18000"), 10)
-const connectBackend = readArg("--connect", "true") !== "false"
+async function main() {
+  const host = readArg("--host", "localhost")
+  const wsPort = Number.parseInt(readArg("--ws_port", "18000"), 10)
+  const connectBackend = readArg("--connect", "true") !== "false"
 
-const renderer = await createCliRenderer({
-  exitOnCtrlC: false
+  const renderer = await createCliRenderer({
+    exitOnCtrlC: false
+  })
+
+  createRoot(renderer).render(<App host={host} wsPort={wsPort} connectBackend={connectBackend} />)
+}
+
+void main().catch((error) => {
+  console.error(error)
+  process.exit(1)
 })
-
-createRoot(renderer).render(<App host={host} wsPort={wsPort} connectBackend={connectBackend} />)

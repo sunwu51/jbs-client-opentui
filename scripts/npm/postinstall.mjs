@@ -28,11 +28,21 @@ function detectPackageName() {
 
 function findBinary() {
   const { packageName, binaryName } = detectPackageName()
-  const candidate = path.join(__dirname, "node_modules", packageName, "bin", binaryName)
-  if (!fs.existsSync(candidate)) {
-    throw new Error(`Missing binary package ${packageName}`)
+  let current = __dirname
+
+  for (;;) {
+    const modulesDir = path.join(current, "node_modules")
+    const candidate = path.join(modulesDir, packageName, "bin", binaryName)
+    if (fs.existsSync(candidate)) {
+      return candidate
+    }
+
+    const parent = path.dirname(current)
+    if (parent === current) {
+      throw new Error(`Missing binary package ${packageName}`)
+    }
+    current = parent
   }
-  return candidate
 }
 
 function main() {
