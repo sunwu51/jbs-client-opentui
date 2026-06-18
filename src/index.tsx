@@ -10,14 +10,14 @@ function readArg(name: string, fallback: string): string {
 
 async function main() {
   const host = readArg("--host", "localhost")
-  const wsPort = Number.parseInt(readArg("--ws_port", "18000"), 10)
+  const port = Number.parseInt(readArg("--port", readArg("--ws_port", "8000")), 10)
   const connectBackend = readArg("--connect", "true") !== "false"
 
   const renderer = await createCliRenderer({
     exitOnCtrlC: false
   })
 
-  createRoot(renderer).render(<App host={host} wsPort={wsPort} connectBackend={connectBackend} />)
+  createRoot(renderer).render(<App host={host} port={port} connectBackend={connectBackend} />)
 }
 
 void main().catch((error) => {

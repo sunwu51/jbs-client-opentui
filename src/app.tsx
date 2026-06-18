@@ -5,38 +5,39 @@ import { LogPanel } from "./components/log-panel.js"
 import { ParamForm } from "./components/param-form.js"
 import { buildPayload, menu, validateAction } from "./protocol.js"
 import { appendLog, backToMenu, createInitialState, nextFocus, openAction, previousFocus, setConnectionStatus, updateFormValue, updateSelectedAction } from "./state.js"
-import { connectWebSocket } from "./ws.js"
+import { connectHttpTransport } from "./ws.js"
 import type { AppState } from "./types.js"
 import type { Selection } from "@opentui/core"
 
 type AppProps = {
   host: string
-  wsPort: number
+  port: number
   connectBackend: boolean
 }
 
-type MenuFocusTarget = "content" | "ws-input" | "reconnect"
+type MenuFocusTarget = "content" | "http-input" | "reconnect"
 
-export function App({ host, wsPort, connectBackend }: AppProps) {
+export function App({ host, port, connectBackend }: AppProps) {
   const renderer = useRenderer()
   const { width, height } = useTerminalDimensions()
   const [state, setState] = useState(createInitialState)
   const [validationError, setValidationError] = useState<string | null>(null)
-  const [wsUrl, setWsUrl] = useState(`ws://${host}:${wsPort}`)
+  const [apiUrl, setApiUrl] = useState(`http://${host}:${port}`)
+  const [connectUrl, setConnectUrl] = useState(`http://${host}:${port}`)
   const [reconnectVersion, setReconnectVersion] = useState(0)
   const [menuFocusTarget, setMenuFocusTarget] = useState<MenuFocusTarget>("content")
   const [toastMessage, setToastMessage] = useState<string | null>(null)
-  const wsInputFocused = state.screen === "menu" && menuFocusTarget === "ws-input"
+  const httpInputFocused = state.screen === "menu" && menuFocusTarget === "http-input"
   const reconnectFocused = state.screen === "menu" && menuFocusTarget === "reconnect"
 
   const connection = useMemo(() => {
-    return connectWebSocket({
-      url: wsUrl,
+    return connectHttpTransport({
+      url: connectUrl,
       enabled: connectBackend,
       onLog: (message: string) => setState((current: AppState) => appendLog(current, message)),
       onStatusChange: (status) => setState((current: AppState) => setConnectionStatus(current, status))
     })
-  }, [connectBackend, reconnectVersion, wsUrl])
+  }, [connectBackend, connectUrl, reconnectVersion])
 
   useEffect(() => {
     if (!connectBackend) {
@@ -73,12 +74,13 @@ export function App({ host, wsPort, connectBackend }: AppProps) {
 
   const reconnect = () => {
     setValidationError(null)
-    setState((current: AppState) => appendLog(current, `[system] reconnect requested: ${wsUrl}`))
+    setState((current: AppState) => appendLog(current, `[system] reconnect requested: ${apiUrl}`))
+    setConnectUrl(apiUrl)
     setReconnectVersion((value) => value + 1)
   }
 
   const cycleMenuFocus = (backward: boolean) => {
-    const order: MenuFocusTarget[] = ["ws-input", "reconnect", "content"]
+    const order: MenuFocusTarget[] = ["http-input", "reconnect", "content"]
     const currentIndex = order.indexOf(menuFocusTarget)
     const nextIndex = backward
       ? (currentIndex - 1 + order.length) % order.length
@@ -93,7 +95,7 @@ export function App({ host, wsPort, connectBackend }: AppProps) {
     }
 
     if (state.screen === "menu") {
-      if (menuFocusTarget === "ws-input") {
+      if (menuFocusTarget === "http-input") {
         if (key.name === "tab") {
           cycleMenuFocus(Boolean(key.shift))
           return
@@ -182,14 +184,14 @@ export function App({ host, wsPort, connectBackend }: AppProps) {
         </box>
       ) : null}
       <box border borderColor="#2563eb" height={3} minHeight={3} maxHeight={3} paddingX={1} paddingY={0} flexDirection="row" alignItems="center" justifyContent="flex-start" gap={1}>
-        <text fg="#93c5fd">WS</text>
+        <text fg="#93c5fd">HTTP</text>
         <box
           flexGrow={1}
-          backgroundColor={wsInputFocused ? "#2563eb" : undefined}
-          border={wsInputFocused}
-          borderColor={wsInputFocused ? "#bfdbfe" : undefined}
+          backgroundColor={httpInputFocused ? "#2563eb" : undefined}
+          border={httpInputFocused}
+          borderColor={httpInputFocused ? "#bfdbfe" : undefined}
         >
-          <input value={wsUrl} onChange={setWsUrl} width="100%" focused={wsInputFocused} />
+          <input value={apiUrl} onChange={setApiUrl} width="100%" focused={httpInputFocused} />
         </box>
         <box
           border

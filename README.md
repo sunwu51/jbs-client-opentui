@@ -2,7 +2,7 @@
 
 `jbs-client` is the CLI client for [JVMByteSwapTool](https://github.com/sunwu51/JVMByteSwapTool).
 
-It is built with OpenTUI and connects to the JVMByteSwapTool WebSocket service by default.
+It is built with OpenTUI and connects to JVMByteSwapTool over HTTP by default.
 
 ## Install
 
@@ -19,32 +19,35 @@ jbs-client
 By default, the client connects to:
 
 ```text
-ws://localhost:18000
+http://localhost:8000
 ```
+
+Requests are sent as JSON-RPC 2.0 `tools/call` messages to `/mcp`. Runtime logs are streamed from `/log` using Server-Sent Events.
 
 ## Options
 
 ```bash
-jbs-client --host localhost --ws_port 18000 --connect true
+jbs-client --host localhost --port 8000 --connect true
 ```
 
 Supported startup parameters:
 
-- `--host <host>`: WebSocket host, default is `localhost`
-- `--ws_port <port>`: WebSocket port, default is `18000`
+- `--host <host>`: HTTP host, default is `localhost`
+- `--port <port>`: HTTP port, default is `8000`
+- `--ws_port <port>`: deprecated compatibility alias for `--port`
 - `--connect <true|false>`: whether to connect to the backend on startup, default is `true`
 
 Examples:
 
 ```bash
-jbs-client --host 192.168.1.10 --ws_port 18000
+jbs-client --host 192.168.1.10 --port 8000
 ```
 
 ```bash
 jbs-client --connect false
 ```
 
-When `--connect false` is used, the UI starts without opening the backend WebSocket connection. You can edit the WebSocket URL inside the TUI and reconnect manually.
+When `--connect false` is used, the UI starts without opening the backend HTTP/SSE connection. You can edit the HTTP base URL inside the TUI and reconnect manually.
 
 ## Keyboard
 

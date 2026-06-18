@@ -5,6 +5,11 @@ const engineOptions = [
   { name: "Javassist", description: "Source-level transformer", value: "javassist" }
 ]
 
+const booleanOptions = [
+  { name: "true", description: "Enabled", value: "true" },
+  { name: "false", description: "Disabled", value: "false" }
+]
+
 function classAndMethodChecker(value: string): boolean {
   return value.split("#").length === 2
 }
@@ -26,11 +31,30 @@ function randomString(length: number): string {
   return result
 }
 
-function commonMap(): Record<string, unknown> {
+function commonArgs(): Record<string, unknown> {
   return {
-    id: randomString(4),
-    timestamp: Date.now()
+    logId: randomString(4)
   }
+}
+
+function compactArgs(args: Record<string, unknown>): Record<string, unknown> {
+  return Object.fromEntries(
+    Object.entries(args).filter(([, value]) => value !== undefined && value !== null && value !== "")
+  )
+}
+
+function toolCall(name: string, args: Record<string, unknown>): string {
+  args = compactArgs(args)
+  const id = String(args.logId ?? randomString(4))
+  return JSON.stringify({
+    jsonrpc: "2.0",
+    id,
+    method: "tools/call",
+    params: {
+      name,
+      arguments: args
+    }
+  })
 }
 
 function parseParamTypes(value: string): string[] {
@@ -50,31 +74,56 @@ export const menu: FunctionDefinition[] = [
     name: "Watch",
     params: [
       { name: "ClassName#MethodName", inputType: "text", checker: classAndMethodChecker, value: "" },
-      { name: "MinCost", inputType: "text", checker: () => true, value: "0" }
+      { name: "MinCost", inputType: "text", checker: () => true, value: "0" },
+      {
+        name: "OGNL",
+        inputType: "text",
+        checker: () => true,
+        value: ""
+      }
     ],
-    toPayload: (params: string[]) => JSON.stringify({ ...commonMap(), type: "WATCH", signature: params[0], minCost: Number.parseInt(params[1] || "0", 10) || 0 })
+    toPayload: (params: string[]) => toolCall("watch", {
+      ...commonArgs(),
+      signature: params[0],
+      minCost: Number.parseInt(params[1] || "0", 10) || 0,
+      ognl: params[2]?.trim()
+    })
   },
   {
     name: "OuterWatch",
     params: [
       { name: "ClassName#MethodName", inputType: "text", checker: classAndMethodChecker, value: "" },
-      { name: "InnerClassName#InnerMethodName", inputType: "text", checker: classAndMethodChecker, value: "" }
+      { name: "InnerClassName#InnerMethodName", inputType: "text", checker: classAndMethodChecker, value: "" },
+      { name: "IncludeNested", inputType: "select", checker: () => true, value: "true", options: booleanOptions },
+      {
+        name: "OGNL",
+        inputType: "text",
+        checker: () => true,
+        value: ""
+      }
     ],
-    toPayload: (params: string[]) => JSON.stringify({ ...commonMap(), type: "OUTER_WATCH", signature: params[0], innerSignature: params[1] })
+    toPayload: (params: string[]) => toolCall("outer_watch", {
+      ...commonArgs(),
+      signature: params[0],
+      innerSignature: params[1],
+      includeNested: params[2] !== "false",
+      ognl: params[3]?.trim()
+    })
   },
   {
     name: "Trace",
     params: [
       { name: "ClassName#MethodName", inputType: "text", checker: classAndMethodChecker, value: "" },
       { name: "MinCost", inputType: "text", checker: () => true, value: "0" },
-      { name: "IgnoreSubMethodZeroCost", inputType: "text", checker: () => true, value: "true" }
+      { name: "IgnoreSubMethodZeroCost", inputType: "select", checker: () => true, value: "true", options: booleanOptions },
+      { name: "IncludeNested", inputType: "select", checker: () => true, value: "true", options: booleanOptions }
     ],
-    toPayload: (params: string[]) => JSON.stringify({
-      ...commonMap(),
-      type: "TRACE",
+    toPayload: (params: string[]) => toolCall("trace", {
+      ...commonArgs(),
       signature: params[0],
       minCost: Number.parseInt(params[1] || "0", 10) || 0,
-      ignoreZero: params[2] === "true"
+      ignoreZero: params[2] !== "false",
+      includeNested: params[3] !== "false"
     })
   },
   {
@@ -87,9 +136,8 @@ export const menu: FunctionDefinition[] = [
     ],
     toPayload: (params: string[]) => {
       const [className, method] = splitSignature(params[0])
-      return JSON.stringify({
-        ...commonMap(),
-        type: "CHANGE_BODY",
+      return toolCall("change_body", {
+        ...commonArgs(),
         className,
         method,
         paramTypes: parseParamTypes(params[1]),
@@ -110,9 +158,8 @@ export const menu: FunctionDefinition[] = [
     toPayload: (params: string[]) => {
       const [className, method] = splitSignature(params[0])
       const [innerClassName, innerMethod] = splitSignature(params[2])
-      return JSON.stringify({
-        ...commonMap(),
-        type: "CHANGE_RESULT",
+      return toolCall("change_result", {
+        ...commonArgs(),
         className,
         method,
         paramTypes: parseParamTypes(params[1]),
@@ -128,9 +175,8 @@ export const menu: FunctionDefinition[] = [
     params: [
       { name: "ClassName", inputType: "text", checker: nonEmptyChecker, value: "" }
     ],
-    toPayload: (params: string[]) => JSON.stringify({
-      ...commonMap(),
-      type: "DECOMPILE",
+    toPayload: (params: string[]) => toolCall("decompile", {
+      ...commonArgs(),
       className: params[0]
     })
   },
@@ -144,9 +190,8 @@ export const menu: FunctionDefinition[] = [
         value: "ctx.getBeanDefinitionNames().length"
       }
     ],
-    toPayload: (params: string[]) => JSON.stringify({
-      ...commonMap(),
-      type: "EVAL",
+    toPayload: (params: string[]) => toolCall("eval", {
+      ...commonArgs(),
       body: params[0]
     })
   },
@@ -168,9 +213,9 @@ export const menu: FunctionDefinition[] = [
 `
       }
     ],
-    toPayload: (params: string[]) => JSON.stringify({
-      ...commonMap(),
-      type: "EXEC",
+    toPayload: (params: string[]) => toolCall("exec", {
+      ...commonArgs(),
+      mode: 1,
       body: `package w;
 import w.Global;
 import w.util.SpringUtils;
@@ -184,7 +229,7 @@ public class Exec{
   {
     name: "Reset",
     params: [],
-    toPayload: () => JSON.stringify({ ...commonMap(), type: "RESET" })
+    toPayload: () => toolCall("reset", { ...commonArgs() })
   }
 ]
 
