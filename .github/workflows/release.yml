@@ -2,8 +2,9 @@ name: Release
 
 on:
   push:
-    tags:
-      - "v*"
+    branches:
+      - main
+      - master
 
 permissions:
   contents: write
@@ -17,6 +18,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -29,18 +32,58 @@ jobs:
         with:
           bun-version: "1.3.12"
 
+      - name: Check Version Change
+        id: version
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          CURRENT_VERSION="$(bun -e 'console.log(require("./package.json").version)')"
+          PREVIOUS_VERSION=""
+          BEFORE_SHA="${{ github.event.before }}"
+
+          if [ -n "$BEFORE_SHA" ] && [ "$BEFORE_SHA" != "0000000000000000000000000000000000000000" ] && git show "${BEFORE_SHA}:package.json" > previous-package.json 2>/dev/null; then
+            PREVIOUS_VERSION="$(bun -e 'console.log(require("./previous-package.json").version)')"
+          fi
+
+          echo "current=${CURRENT_VERSION}" >> "$GITHUB_OUTPUT"
+          echo "previous=${PREVIOUS_VERSION}" >> "$GITHUB_OUTPUT"
+
+          if [ "$CURRENT_VERSION" != "$PREVIOUS_VERSION" ]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Check Release Exists
+        if: steps.version.outputs.changed == 'true'
+        id: release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          if gh release view "v${{ steps.version.outputs.current }}" > /dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Install Dependencies
+        if: steps.version.outputs.changed == 'true' && steps.release.outputs.exists == 'false'
         run: bun install
 
       - name: Build Packages
+        if: steps.version.outputs.changed == 'true' && steps.release.outputs.exists == 'false'
         run: bun run build:npm
 
       - name: Verify Darwin Signatures
+        if: steps.version.outputs.changed == 'true' && steps.release.outputs.exists == 'false'
         run: |
           codesign -dv --verbose=4 dist/npm/jbs-client-darwin-arm64/bin/jbs-client
           codesign -dv --verbose=4 dist/npm/jbs-client-darwin-x64/bin/jbs-client
 
       - name: Prepare Release Assets
+        if: steps.version.outputs.changed == 'true' && steps.release.outputs.exists == 'false'
         shell: bash
         run: |
           set -euo pipefail
@@ -61,10 +104,14 @@ jobs:
           ls -lah release-assets
 
       - name: Upload Release Assets
+        if: steps.version.outputs.changed == 'true' && steps.release.outputs.exists == 'false'
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: v${{ steps.version.outputs.current }}
+          name: Release v${{ steps.version.outputs.current }}
           files: release-assets/*.zip
           generate_release_notes: true
 
       - name: Publish npm Packages
+        if: steps.version.outputs.changed == 'true' && steps.release.outputs.exists == 'false'
         run: bun run publish:npm

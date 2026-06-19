@@ -61,7 +61,7 @@ When `--connect false` is used, the UI starts without opening the backend HTTP/S
 
 This repository publishes prebuilt binaries through GitHub Releases and npm wrapper packages.
 
-Pushing a tag like `v0.0.1` triggers the release workflow, builds all supported platforms, zips each platform binary, and uploads them to the corresponding GitHub Release.
+Pushing to `main` or `master` triggers the release workflow. The workflow publishes only when `package.json` changes to a new version, then builds all supported platforms, zips each platform binary, and uploads them to the corresponding GitHub Release.
 
 To publish npm packages from the correct `dist/npm/*` directories, use:
 
