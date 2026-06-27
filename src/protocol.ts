@@ -64,6 +64,27 @@ function parseParamTypes(value: string): string[] {
     .filter((part) => part.length > 0)
 }
 
+function parseVariables(value: string): Record<string, string> | undefined {
+  if (!value.trim()) {
+    return undefined
+  }
+  const parsed = JSON.parse(value)
+  return parsed && typeof parsed === "object" && !Array.isArray(parsed)
+    ? parsed as Record<string, string>
+    : undefined
+}
+
+function variablesChecker(value: string): boolean {
+  if (!value.trim()) {
+    return true
+  }
+  try {
+    return parseVariables(value) !== undefined
+  } catch {
+    return false
+  }
+}
+
 function splitSignature(value: string): [string, string] {
   const [className = "", method = ""] = value.split("#")
   return [className, method]
@@ -75,10 +96,17 @@ export const menu: FunctionDefinition[] = [
     params: [
       { name: "ClassName#MethodName", inputType: "text", checker: classAndMethodChecker, value: "" },
       { name: "MinCost", inputType: "text", checker: () => true, value: "0" },
+      { name: "DepthForJson", inputType: "text", checker: () => true, value: "3" },
       {
         name: "OGNL",
         inputType: "text",
         checker: () => true,
+        value: ""
+      },
+      {
+        name: "Variables(JSON)",
+        inputType: "text",
+        checker: variablesChecker,
         value: ""
       }
     ],
@@ -86,7 +114,9 @@ export const menu: FunctionDefinition[] = [
       ...commonArgs(),
       signature: params[0],
       minCost: Number.parseInt(params[1] || "0", 10) || 0,
-      ognl: params[2]?.trim()
+      depthForJson: Number.parseInt(params[2] || "3", 10) || 3,
+      ognl: params[3]?.trim(),
+      variables: parseVariables(params[4] ?? "")
     })
   },
   {
@@ -95,10 +125,17 @@ export const menu: FunctionDefinition[] = [
       { name: "ClassName#MethodName", inputType: "text", checker: classAndMethodChecker, value: "" },
       { name: "InnerClassName#InnerMethodName", inputType: "text", checker: classAndMethodChecker, value: "" },
       { name: "IncludeNested", inputType: "select", checker: () => true, value: "true", options: booleanOptions },
+      { name: "DepthForJson", inputType: "text", checker: () => true, value: "3" },
       {
         name: "OGNL",
         inputType: "text",
         checker: () => true,
+        value: ""
+      },
+      {
+        name: "Variables(JSON)",
+        inputType: "text",
+        checker: variablesChecker,
         value: ""
       }
     ],
@@ -107,7 +144,9 @@ export const menu: FunctionDefinition[] = [
       signature: params[0],
       innerSignature: params[1],
       includeNested: params[2] !== "false",
-      ognl: params[3]?.trim()
+      depthForJson: Number.parseInt(params[3] || "3", 10) || 3,
+      ognl: params[4]?.trim(),
+      variables: parseVariables(params[5] ?? "")
     })
   },
   {
@@ -176,6 +215,16 @@ export const menu: FunctionDefinition[] = [
       { name: "ClassName", inputType: "text", checker: nonEmptyChecker, value: "" }
     ],
     toPayload: (params: string[]) => toolCall("decompile", {
+      ...commonArgs(),
+      className: params[0]
+    })
+  },
+  {
+    name: "FindSubclasses",
+    params: [
+      { name: "ClassName", inputType: "text", checker: nonEmptyChecker, value: "" }
+    ],
+    toPayload: (params: string[]) => toolCall("find_subclasses", {
       ...commonArgs(),
       className: params[0]
     })

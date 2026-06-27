@@ -20,7 +20,7 @@ describe("components", () => {
     const frame = setup.captureCharFrame()
     expect(frame).toContain("Input the action?")
     expect(frame).toContain("Watch")
-    expect(frame).toContain("Eval")
+    expect(frame).toContain("FindSubclasses")
   })
 
   test("LogPanel renders logs and status", async () => {
